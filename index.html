@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shared Text Platform</title>
+    <title>Real-time Text Save</title>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-firestore.js"></script>
     <style>
@@ -21,55 +21,56 @@
     </style>
 </head>
 <body>
-    <h1>Shared Text Platform</h1>
-    <textarea id="content" placeholder="Write something..."></textarea><br>
-    <button onclick="saveText()">Save</button>
-    <div id="display"></div>
+    <textarea id="content" placeholder="Type here..."></textarea>
 
     <script>
         // Firebase configuration
         const firebaseConfig = {
-             apiKey: "AIzaSyCW-88MKXn-bc6CMiteVRRlWqdrVyDXMeo",
-             authDomain: "githubsheet-31fbb.firebaseapp.com",
-             projectId: "githubsheet-31fbb",
-             storageBucket: "githubsheet-31fbb.appspot.com",
-             messagingSenderId: "922448161265",
-             appId: "1:922448161265:web:5622a1c4e180d5c71f3c50",
- 
+            apiKey: "AIzaSyCW-88MKXn-bc6CMiteVRRlWqdrVyDXMeo",
+            authDomain: "githubsheet-31fbb.firebaseapp.com",
+            projectId: "githubsheet-31fbb",
+            storageBucket: "githubsheet-31fbb.appspot.com",
+            messagingSenderId: "922448161265",
+            appId: "1:922448161265:web:5622a1c4e180d5c71f3c50"
         };
 
         // Initialize Firebase
         const app = firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
+        // Reference to the document in Firestore
+        const docRef = db.collection('texts').doc('sharedText');
+
         // Function to save text to Firestore
-        function saveText() {
-            const content = document.getElementById('content').value;
-            db.collection('texts').add({
+        function saveText(content) {
+            docRef.set({
                 content: content,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                document.getElementById('content').value = '';
-                loadTexts();
             });
         }
 
-        // Function to load texts from Firestore
-        function loadTexts() {
-            db.collection('texts').orderBy('timestamp', 'desc').get().then((querySnapshot) => {
-                const display = document.getElementById('display');
-                display.innerHTML = '';
-                querySnapshot.forEach((doc) => {
-                    const text = doc.data().content;
-                    const p = document.createElement('p');
-                    p.textContent = text;
-                    display.appendChild(p);
-                });
-            });
-        }
+        // Event listener for textarea input
+        const contentElement = document.getElementById('content');
+        contentElement.addEventListener('input', () => {
+            saveText(contentElement.value);
+        });
 
-        // Load texts on page load
-        window.onload = loadTexts;
+        // Load initial content from Firestore
+        docRef.get().then((doc) => {
+            if (doc.exists) {
+                contentElement.value = doc.data().content;
+            }
+        });
+
+        // Real-time listener to update the content from Firestore
+        docRef.onSnapshot((doc) => {
+            if (doc.exists) {
+                const data = doc.data();
+                if (contentElement.value !== data.content) {
+                    contentElement.value = data.content;
+                }
+            }
+        });
     </script>
 </body>
-</html>0
+</html>
